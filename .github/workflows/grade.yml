@@ -1,0 +1,25 @@
+name: Grade Submission
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'solution/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Grade submission
+        uses: signalwire-academy/swaig-grader@v1
+        with:
+          solution-file: solution/agent.py
+          grading-config: tests/grading.yaml
