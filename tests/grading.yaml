@@ -1,0 +1,48 @@
+# Grading configuration for practical exam
+
+assignment:
+  id: "L3-practical"
+  name: "Level 3: Expert Practical Exam"
+  level: 3
+  type: "practical-exam"
+  passing_score: 70
+
+checks:
+  - id: instantiate
+    name: "Agent Instantiation"
+    points: 15
+    type: instantiate
+    file: solution/agent.py
+  - id: swml_valid
+    name: "SWML Generation"
+    points: 15
+    type: swml_valid
+    file: solution/agent.py
+  - id: multi_agent
+    name: "Multiple agents"
+    points: 20
+    type: multi_agent
+    file: solution/agent.py
+    agents:
+      - Gateway
+      - Agent
+  - id: has_security
+    name: "Security features"
+    points: 15
+    type: swml_contains
+    file: solution/agent.py
+    require:
+      - text: "secure"
+  - id: has_routing
+    name: "Routing logic"
+    points: 20
+    type: swml_contains
+    file: solution/agent.py
+    require:
+      - text: "transfer"
+
+feedback:
+  pass: |
+    Congratulations! You've passed the Level 3 Practical Exam!
+  fail: |
+    Some requirements weren't met. Review the feedback and try again.
