@@ -1,48 +1,170 @@
-# Grading configuration for practical exam
+# Grading configuration for Level 3 Practical Exam
+# Scenario: TeleHealth Connect - HIPAA-compliant telehealth voice AI system
 
 assignment:
   id: "L3-practical"
-  name: "Level 3: Expert Practical Exam"
+  name: "Level 3 Practical: Certified Voice AI Architect"
   level: 3
   type: "practical-exam"
   passing_score: 70
 
 checks:
-  - id: instantiate
-    name: "Agent Instantiation"
-    points: 15
+  # Part 1: Gateway Agent (15 points)
+  - id: gateway_instantiate
+    name: "Gateway agent loads"
+    points: 5
     type: instantiate
-    file: solution/agent.py
-  - id: swml_valid
-    name: "SWML Generation"
-    points: 15
+    file: solution/gateway_agent.py
+
+  - id: gateway_swml_valid
+    name: "Gateway generates valid SWML"
+    points: 5
     type: swml_valid
-    file: solution/agent.py
-  - id: multi_agent
-    name: "Multiple agents"
-    points: 20
-    type: multi_agent
-    file: solution/agent.py
-    agents:
-      - Gateway
-      - Agent
-  - id: has_security
-    name: "Security features"
-    points: 15
+    file: solution/gateway_agent.py
+
+  - id: func_route_call
+    name: "route_call function exists"
+    points: 5
+    type: function_exists
+    file: solution/gateway_agent.py
+    function: route_call
+
+  # Part 2: Patient Agent (25 points)
+  - id: patient_instantiate
+    name: "Patient agent loads"
+    points: 5
+    type: instantiate
+    file: solution/patient_agent.py
+
+  - id: patient_swml_valid
+    name: "Patient generates valid SWML"
+    points: 5
+    type: swml_valid
+    file: solution/patient_agent.py
+
+  - id: func_verify_patient
+    name: "verify_patient function exists"
+    points: 5
+    type: function_exists
+    file: solution/patient_agent.py
+    function: verify_patient
+
+  - id: func_assess_symptoms
+    name: "assess_symptoms function exists"
+    points: 5
+    type: function_exists
+    file: solution/patient_agent.py
+    function: assess_symptoms
+
+  - id: func_book_appointment
+    name: "book_appointment function exists"
+    points: 5
+    type: function_exists
+    file: solution/patient_agent.py
+    function: book_appointment
+
+  # Part 3: Security Features (15 points)
+  - id: has_secure_functions
+    name: "Has secure function marking"
+    points: 5
     type: swml_contains
-    file: solution/agent.py
+    file: solution/patient_agent.py
     require:
       - text: "secure"
-  - id: has_routing
-    name: "Routing logic"
-    points: 20
+
+  - id: has_contexts
+    name: "Has multi-context workflow"
+    points: 5
     type: swml_contains
-    file: solution/agent.py
+    file: solution/patient_agent.py
+    require:
+      - text: "context"
+
+  - id: has_recording_control
+    name: "Has recording control"
+    points: 5
+    type: swml_contains
+    file: solution/patient_agent.py
+    require:
+      - text: "record"
+
+  # Part 4: Integration (15 points)
+  - id: exec_route_call
+    name: "route_call routes to triage"
+    points: 5
+    type: exec
+    file: solution/gateway_agent.py
+    function: route_call
+    args:
+      department: "triage"
+    expect:
+      stdout_contains:
+        - "transfer"
+
+  - id: exec_verify_patient
+    name: "verify_patient validates identity"
+    points: 5
+    type: exec
+    file: solution/patient_agent.py
+    function: verify_patient
+    args:
+      dob: "1980-01-15"
+      member_id: "M123456"
+    expect:
+      stdout_contains:
+        - "verified"
+
+  - id: has_transfer
+    name: "Has agent transfer capability"
+    points: 5
+    type: swml_contains
+    file: solution/gateway_agent.py
     require:
       - text: "transfer"
 
+  # Part 5: Observability (10 points) - Checked in shared/ files
+  - id: func_get_hours
+    name: "get_hours function exists"
+    points: 5
+    type: function_exists
+    file: solution/gateway_agent.py
+    function: get_hours
+
+  - id: func_request_refill
+    name: "request_refill function exists"
+    points: 5
+    type: function_exists
+    file: solution/patient_agent.py
+    function: request_refill
+
+  # Architecture & Deployment (20 points) - Manual review
+  # - architecture/overview.md
+  # - architecture/diagram.md
+  # - architecture/adr/*.md
+  # - deployment/Dockerfile
+  # - deployment/docker-compose.yml
+  # - shared/logging_config.py
+  # - shared/metrics.py
+
 feedback:
   pass: |
-    Congratulations! You've passed the Level 3 Practical Exam!
+    Congratulations! Your system passed the automated checks.
+
+    Your submission will now be reviewed by an instructor for:
+    - Architecture design and ADRs
+    - HIPAA compliance implementation
+    - Observability setup
+    - Deployment configuration
+    - Code quality and documentation
+
+    You will receive final results after manual review.
   fail: |
-    Some requirements weren't met. Review the feedback and try again.
+    Some automated checks did not pass. Review the feedback above.
+
+    Common issues:
+    - Ensure gateway_agent.py and patient_agent.py are in solution/
+    - Verify all required functions are implemented
+    - Check that security features are properly configured
+    - Make sure contexts and recording controls are set up
+
+    You can push again to re-run the grader.

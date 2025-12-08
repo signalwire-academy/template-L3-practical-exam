@@ -1,4 +1,4 @@
-name: Grade Submission
+name: Grade Practical Exam
 
 on:
   push:
@@ -12,14 +12,46 @@ permissions:
   issues: write
 
 jobs:
-  grade:
+  grade-gateway:
+    # Skip if commit is from github-classroom[bot]
+    if: github.actor != 'github-classroom[bot]'
     runs-on: ubuntu-latest
-    
+    name: Grade Gateway Agent
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Grade submission
+
+      - name: Grade gateway agent
+        id: grade-gateway
         uses: signalwire-academy/swaig-grader@v1
         with:
-          solution-file: solution/agent.py
+          solution-file: solution/gateway_agent.py
           grading-config: tests/grading.yaml
+          requires-manual-review: 'true'
+
+  grade-patient:
+    # Skip if commit is from github-classroom[bot]
+    if: github.actor != 'github-classroom[bot]'
+    runs-on: ubuntu-latest
+    name: Grade Patient Agent
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Grade patient agent
+        id: grade-patient
+        uses: signalwire-academy/swaig-grader@v1
+        with:
+          solution-file: solution/patient_agent.py
+          grading-config: tests/grading.yaml
+          requires-manual-review: 'true'
+
+      - name: Notify progress tracker
+        if: always()
+        continue-on-error: true
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PROGRESS_TOKEN }}
+          repository: signalwire-academy/progress-tracker
+          event-type: grading-complete
+          client-payload: '{"repo": "${{ github.repository }}", "student": "${{ github.repository_owner }}", "assignment": "L3-practical", "result": "${{ steps.grade-patient.outcome }}", "sha": "${{ github.sha }}"}'
