@@ -7,7 +7,6 @@ This is the instructor reference solution.
 """
 
 from signalwire_agents import AgentBase, SwaigFunctionResult
-from signalwire_agents.contexts import ContextBuilder
 
 # Mock patient database
 PATIENTS = {
@@ -74,45 +73,37 @@ class PatientAgent(AgentBase):
         )
 
     def _setup_contexts(self):
+        contexts = self.define_contexts()
+
         # Verification context
-        verification = ContextBuilder("verification")
-        verification.add_step(
-            "system",
-            "First, verify the patient's identity using their date of birth "
-            "and member ID. Pause recording before collecting this information."
-        )
-        verification.set_functions(["verify_patient", "secure_input"])
-        self.add_context(verification)
+        verification = contexts.add_context("verification")
+        verification.add_step("verify") \
+            .set_text("First, verify the patient's identity using their date of birth "
+                      "and member ID. Pause recording before collecting this information.") \
+            .set_functions(["verify_patient", "secure_input"]) \
+            .set_valid_contexts(["triage"])
 
         # Triage context
-        triage = ContextBuilder("triage")
-        triage.add_step(
-            "system",
-            "Assess the patient's symptoms. If urgent, escalate immediately. "
-            "Otherwise, help schedule an appropriate appointment."
-        )
-        triage.set_functions(["assess_symptoms", "escalate_urgent"])
-        self.add_context(triage)
+        triage = contexts.add_context("triage")
+        triage.add_step("assess") \
+            .set_text("Assess the patient's symptoms. If urgent, escalate immediately. "
+                      "Otherwise, help schedule an appropriate appointment.") \
+            .set_functions(["assess_symptoms", "escalate_urgent"]) \
+            .set_valid_contexts(["scheduling", "prescriptions"])
 
         # Scheduling context
-        scheduling = ContextBuilder("scheduling")
-        scheduling.add_step(
-            "system",
-            "Help the patient find and book an appointment with the "
-            "appropriate specialist."
-        )
-        scheduling.set_functions(["check_availability", "book_appointment"])
-        self.add_context(scheduling)
+        scheduling = contexts.add_context("scheduling")
+        scheduling.add_step("schedule") \
+            .set_text("Help the patient find and book an appointment with the "
+                      "appropriate specialist.") \
+            .set_functions(["check_availability", "book_appointment"])
 
         # Prescriptions context
-        prescriptions = ContextBuilder("prescriptions")
-        prescriptions.add_step(
-            "system",
-            "Handle prescription refill requests. Verify the medication "
-            "and pharmacy information."
-        )
-        prescriptions.set_functions(["request_refill"])
-        self.add_context(prescriptions)
+        prescriptions = contexts.add_context("prescriptions")
+        prescriptions.add_step("refill") \
+            .set_text("Handle prescription refill requests. Verify the medication "
+                      "and pharmacy information.") \
+            .set_functions(["request_refill"])
 
     def _setup_functions(self):
         @self.tool(
@@ -148,9 +139,9 @@ class PatientAgent(AgentBase):
                     "patient_name": patient["name"],
                     "patient_tier": patient["tier"]
                 })
-                result.set_context_switch("triage")
+                result.swml_change_context("triage")
                 # Resume recording after verification
-                result.toggle_record(on=True)
+                result.record_call(control_id="main", stereo=True, format="mp3")
                 return result
             else:
                 return SwaigFunctionResult(
@@ -170,7 +161,7 @@ class PatientAgent(AgentBase):
             result = SwaigFunctionResult(
                 "Recording has been paused. You can now share your information securely."
             )
-            result.toggle_record(on=False)
+            result.stop_record_call(control_id="main")
             return result
 
         @self.tool(
@@ -194,9 +185,10 @@ class PatientAgent(AgentBase):
                 if urgent in symptoms:
                     result = SwaigFunctionResult(
                         f"Based on your symptoms ({urgent}), I need to connect you "
-                        "with a nurse immediately. Please hold."
+                        "with a nurse immediately. Please hold.",
+                        post_process=True
                     )
-                    result.swml_transfer("+15559999999", final=True)
+                    result.swml_transfer("+15559999999", "Goodbye!", final=True)
                     return result
 
             result = SwaigFunctionResult(
@@ -205,7 +197,7 @@ class PatientAgent(AgentBase):
                 "What type of doctor would you like to see?"
             )
             result.update_global_data({"symptoms": symptoms})
-            result.set_context_switch("scheduling")
+            result.swml_change_context("scheduling")
             return result
 
         @self.tool(
@@ -218,9 +210,10 @@ class PatientAgent(AgentBase):
         )
         def escalate_urgent(args: dict, raw_data: dict = None) -> SwaigFunctionResult:
             result = SwaigFunctionResult(
-                "I'm connecting you with an on-call nurse immediately. Please hold."
+                "I'm connecting you with an on-call nurse immediately. Please hold.",
+                post_process=True
             )
-            result.swml_transfer("+15559999999", final=True)
+            result.swml_transfer("+15559999999", "Goodbye!", final=True)
             return result
 
         @self.tool(

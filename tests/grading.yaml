@@ -117,10 +117,14 @@ checks:
   - id: has_transfer
     name: "Has agent transfer capability"
     points: 5
-    type: swml_contains
+    type: exec
     file: solution/gateway_agent.py
-    require:
-      - text: "transfer"
+    function: route_call
+    args:
+      department: "billing"
+    expect:
+      stdout_contains:
+        - "transfer"
 
   # Part 5: Observability (10 points) - Checked in shared/ files
   - id: func_get_hours

@@ -16,7 +16,6 @@ See README.md for full requirements.
 """
 
 from signalwire_agents import AgentBase, SwaigFunctionResult
-from signalwire_agents.contexts import ContextBuilder
 
 # Mock patient database
 PATIENTS = {

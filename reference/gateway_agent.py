@@ -88,15 +88,10 @@ class GatewayAgent(AgentBase):
             destination = DEPARTMENTS.get(department, DEPARTMENTS["triage"])
 
             result = SwaigFunctionResult(
-                f"I'm transferring you to our {department} department now."
+                f"I'm transferring you to our {department} department now.",
+                post_process=True
             )
-
-            if destination.startswith("/"):
-                # Internal agent transfer
-                result.swml_transfer(destination, final=True)
-            else:
-                # External phone transfer
-                result.swml_transfer(destination, final=True)
+            result.swml_transfer(destination, "Goodbye!", final=True)
 
             return result
 
