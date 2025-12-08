@@ -215,4 +215,10 @@ solution/
 
 ---
 
+## Certification Complete
+
+Congratulations! You've completed all requirements for the **Certified Voice AI Architect** certification!
+
+---
+
 *SignalWire AI Agents Certification - Level 3 Practical Exam*
