@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'solution/**'
+  issues:
+    types: [closed]
   workflow_dispatch:
 
 permissions:
@@ -13,8 +15,8 @@ permissions:
 
 jobs:
   grade-gateway:
-    # Skip if commit is from github-classroom[bot]
-    if: github.actor != 'github-classroom[bot]'
+    # Skip if commit is from github-classroom[bot] or if this is a template repo
+    if: github.event_name != 'issues' && github.actor != 'github-classroom[bot]' && !startsWith(github.repository, 'signalwire-academy/template-')
     runs-on: ubuntu-latest
     name: Grade Gateway Agent
 
@@ -30,8 +32,8 @@ jobs:
           requires-manual-review: 'true'
 
   grade-patient:
-    # Skip if commit is from github-classroom[bot]
-    if: github.actor != 'github-classroom[bot]'
+    # Skip if commit is from github-classroom[bot] or if this is a template repo
+    if: github.event_name != 'issues' && github.actor != 'github-classroom[bot]' && !startsWith(github.repository, 'signalwire-academy/template-')
     runs-on: ubuntu-latest
     name: Grade Patient Agent
 
@@ -55,3 +57,30 @@ jobs:
           repository: signalwire-academy/progress-tracker
           event-type: grading-complete
           client-payload: '{"repo": "${{ github.repository }}", "student": "${{ github.repository_owner }}", "assignment": "L3-practical", "result": "${{ steps.grade-patient.outcome }}", "sha": "${{ github.sha }}"}'
+
+  # Notify progress tracker when instructor closes issue (manual review complete)
+  notify-review-complete:
+    if: github.event_name == 'issues' && github.event.action == 'closed' && !startsWith(github.repository, 'signalwire-academy/template-')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if passed
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            const passed = labels.includes('passed');
+            core.setOutput('passed', passed);
+            console.log(`Issue closed with labels: ${labels.join(', ')}`);
+            console.log(`Passed: ${passed}`);
+
+      - name: Notify progress tracker
+        if: steps.check.outputs.passed == 'true'
+        continue-on-error: true
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PROGRESS_TOKEN }}
+          repository: signalwire-academy/progress-tracker
+          event-type: grading-complete
+          client-payload: '{"repo": "${{ github.repository }}", "student": "${{ github.repository_owner }}", "assignment": "L3-practical", "result": "success", "review": "complete"}'
